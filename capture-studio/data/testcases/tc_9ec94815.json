@@ -4,11 +4,11 @@
   "name": "3",
   "description": "",
   "createdAt": "2026-08-19T15:55:40.871Z",
-  "updatedAt": "2026-08-19T16:09:49.274Z",
+  "updatedAt": "2026-08-19T16:43:49.074Z",
   "lastRun": {
     "status": "failed",
-    "at": "2026-08-19T16:09:49.274Z",
-    "passed": 10,
+    "at": "2026-08-19T16:43:49.074Z",
+    "passed": 9,
     "total": 45
   },
   "children": [

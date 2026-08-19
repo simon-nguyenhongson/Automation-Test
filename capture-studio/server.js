@@ -7,7 +7,7 @@ const { WebSocketServer } = require('ws');
 
 const store = require('./lib/store');
 const { RecorderSession } = require('./lib/recorder');
-const { runTestCase, listRuns, getRun, deleteRun } = require('./lib/runner');
+const { runTestCase, listRuns, getRun, deleteRun, runsUsage } = require('./lib/runner');
 const { exportSpec } = require('./lib/codegen');
 
 const PORT = process.env.STUDIO_PORT ? Number(process.env.STUDIO_PORT) : 4700;
@@ -97,6 +97,7 @@ app.post('/api/record/start', async (req, res) => {
   session = new RecorderSession();
   session.on('step', (step) => broadcast({ type: 'record-step', step }));
   session.on('step-updated', (step) => broadcast({ type: 'record-step-updated', step }));
+  session.on('steps-sync', (steps) => broadcast({ type: 'record-steps-sync', steps }));
   session.on('mode', (mode) => broadcast({ type: 'record-mode', mode }));
   session.on('warn', (message) => broadcast({ type: 'record-warn', message }));
   session.on('closed', () => broadcast({ type: 'record-stopped', reason: 'browser-closed' }));
@@ -158,6 +159,27 @@ app.get('/api/runs', (req, res) => {
   res.json(listRuns());
 });
 
+app.get('/api/runs-usage', (req, res) => {
+  res.json({ bytes: runsUsage() });
+});
+
+// Bulk delete — removes each run folder with all evidence images.
+app.post('/api/runs/delete', (req, res) => {
+  const ids = Array.isArray((req.body || {}).ids) ? req.body.ids : [];
+  let deleted = 0;
+  let freedBytes = 0;
+  for (const id of ids) {
+    try {
+      const freed = deleteRun(id);
+      if (freed !== null) {
+        deleted++;
+        freedBytes += freed;
+      }
+    } catch { /* skip invalid ids */ }
+  }
+  res.json({ deleted, freedBytes });
+});
+
 app.get('/api/runs/:id', (req, res) => {
   try {
     const run = getRun(req.params.id);
@@ -170,8 +192,9 @@ app.get('/api/runs/:id', (req, res) => {
 
 app.delete('/api/runs/:id', (req, res) => {
   try {
-    if (!deleteRun(req.params.id)) return res.status(404).json({ error: 'Không tìm thấy lượt chạy' });
-    res.json({ ok: true });
+    const freed = deleteRun(req.params.id);
+    if (freed === null) return res.status(404).json({ error: 'Không tìm thấy lượt chạy' });
+    res.json({ ok: true, freedBytes: freed });
   } catch (err) {
     res.status(400).json({ error: String(err.message || err) });
   }
@@ -180,24 +203,43 @@ app.delete('/api/runs/:id', (req, res) => {
 /* ---------------- batch run ---------------- */
 
 app.post('/api/run-batch', async (req, res) => {
-  const { ids, headless } = req.body || {};
+  const { ids, headless, parallel } = req.body || {};
   const list = (Array.isArray(ids) ? ids : []).filter((id) => store.get(id));
   if (!list.length) return res.status(400).json({ error: 'Chọn ít nhất một test case' });
   if (running) return res.status(409).json({ error: 'Đang có lượt chạy khác. Chờ xong rồi chạy tiếp.' });
   running = true;
   const names = list.map((id) => store.get(id).name);
-  broadcast({ type: 'batch-started', ids: list, names, total: list.length });
+  broadcast({ type: 'batch-started', ids: list, names, total: list.length, parallel: !!parallel });
   const results = [];
-  try {
-    for (const id of list) {
-      const tc = store.get(id);
-      if (!tc) continue;
+  let done = 0;
+
+  const runOne = async (id) => {
+    const tc = store.get(id);
+    if (!tc) return;
+    try {
       const summary = await runTestCase(tc, store.get, { headless: !!headless, emit: broadcast });
       store.update(tc.id, {
         lastRun: { status: summary.status, at: summary.at, passed: summary.passed, total: summary.total },
       });
       results.push({ tcId: id, name: tc.name, ...summary });
-      broadcast({ type: 'batch-progress', done: results.length, total: list.length });
+    } catch (err) {
+      // One broken test case must not sink the whole batch.
+      results.push({ tcId: id, name: tc.name, status: 'failed', error: String(err.message || err).split('\n')[0] });
+    }
+    broadcast({ type: 'batch-progress', done: ++done, total: list.length });
+  };
+
+  try {
+    if (parallel) {
+      const POOL = 4; // browsers at once — enough parallelism without drowning the machine
+      const queue = list.slice();
+      await Promise.all(
+        Array.from({ length: Math.min(POOL, queue.length) }, async () => {
+          while (queue.length) await runOne(queue.shift());
+        })
+      );
+    } else {
+      for (const id of list) await runOne(id);
     }
     broadcast({ type: 'batch-done', results });
     res.json({ results });

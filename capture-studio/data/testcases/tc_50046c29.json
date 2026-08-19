@@ -4,10 +4,10 @@
   "name": "Mở tài liệu cài đặt",
   "description": "Đi tới Get started từ trang chủ",
   "createdAt": "2026-08-19T15:25:14.509Z",
-  "updatedAt": "2026-08-19T16:11:12.294Z",
+  "updatedAt": "2026-08-19T16:56:23.612Z",
   "lastRun": {
     "status": "passed",
-    "at": "2026-08-19T16:11:12.294Z",
+    "at": "2026-08-19T16:56:23.611Z",
     "passed": 3,
     "total": 3
   },

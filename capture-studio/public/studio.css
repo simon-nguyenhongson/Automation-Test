@@ -73,15 +73,25 @@ body {
   font-size: var(--ds-text-xs-size);
 }
 
-.main { flex: 1; min-width: 0; }
-.page-rule { height: 12px; background: var(--ds-brand-gradient); }
-.page { padding: var(--ds-space-6) var(--ds-page-gutter) var(--ds-space-16); }
+.main { flex: 1; min-width: 0; height: 100vh; display: flex; flex-direction: column; }
+.page-rule { height: 12px; background: var(--ds-brand-gradient); flex: none; }
+.page {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: var(--ds-space-6) var(--ds-page-gutter) var(--ds-space-16);
+  overflow: hidden;
+}
+.page > #alert-slot { flex: none; }
+.page > section { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
 .page-head {
   display: flex;
   align-items: flex-start;
   gap: var(--ds-space-4);
   margin: var(--ds-space-2) 0 var(--ds-space-5);
+  flex: none;
 }
 .page-head h1 {
   margin: 0;
@@ -318,7 +328,7 @@ select.field { height: var(--ds-control-h-l); }
 .tbl .cell-actions .btn + .btn { margin-left: var(--ds-space-1); }
 
 /* wrapper so the table sits in a card */
-.tbl-card { border: 1px solid var(--ds-border-default); border-radius: var(--ds-radius-lg); box-shadow: var(--ds-shadow-sm); overflow: auto; max-height: calc(100vh - 320px); background: var(--ds-surface-card); }
+.tbl-card { border: 1px solid var(--ds-border-default); border-radius: var(--ds-radius-lg); box-shadow: var(--ds-shadow-sm); overflow: auto; flex: 1; min-height: 0; background: var(--ds-surface-card); }
 .tbl-card .tbl th { border-top: 0; }
 .tbl-card .tbl th:first-child, .tbl-card .tbl td:first-child { border-left: 0; }
 .tbl-card .tbl th:last-child, .tbl-card .tbl td:last-child { border-right: 0; }

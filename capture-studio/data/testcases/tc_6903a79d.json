@@ -4,10 +4,10 @@
   "name": "Mở trang chủ Playwright",
   "description": "Kiểm tra trang chủ hiển thị",
   "createdAt": "2026-08-19T15:25:14.499Z",
-  "updatedAt": "2026-08-19T16:09:51.643Z",
+  "updatedAt": "2026-08-19T16:50:32.320Z",
   "lastRun": {
     "status": "passed",
-    "at": "2026-08-19T16:09:51.643Z",
+    "at": "2026-08-19T16:50:32.319Z",
     "passed": 3,
     "total": 3
   },

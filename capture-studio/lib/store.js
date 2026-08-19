@@ -63,6 +63,7 @@ function create(data) {
   if (tc.type === 'atomic') {
     tc.baseUrl = String(data.baseUrl || '');
     tc.steps = Array.isArray(data.steps) ? data.steps : [];
+    tc.params = data.params && typeof data.params === 'object' ? data.params : {};
   } else {
     tc.children = Array.isArray(data.children) ? data.children.slice() : [];
   }
@@ -72,7 +73,7 @@ function create(data) {
 function update(id, patch) {
   const tc = get(id);
   if (!tc) return null;
-  const allowed = ['name', 'description', 'baseUrl', 'steps', 'children', 'lastRun'];
+  const allowed = ['name', 'description', 'baseUrl', 'steps', 'children', 'lastRun', 'params'];
   for (const key of allowed) {
     if (patch[key] !== undefined) tc[key] = patch[key];
   }

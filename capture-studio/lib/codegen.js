@@ -1,7 +1,7 @@
 // Codegen — turns a test case into a Playwright spec under tests/generated/.
 const fs = require('fs');
 const path = require('path');
-const { flatten } = require('./runner');
+const { flatten, resolveParams } = require('./runner');
 
 const OUT_DIR = path.join(__dirname, '..', '..', 'tests', 'generated');
 
@@ -9,23 +9,45 @@ function q(s) {
   return "'" + String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n') + "'";
 }
 
-function stepCode(step) {
-  const loc = `page.locator(${q(step.selector || '')}).first()`;
+const reEsc = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** Locator expression honouring the step's iframe context. */
+function locExpr(step, { all = false } = {}) {
+  let base = 'page';
+  if (Array.isArray(step.frames) && step.frames.length) {
+    base = 'page' + step.frames.map((f) => `.frameLocator(${q(f)})`).join('');
+  } else if (step.frameUrl) {
+    base = `page.frame({ url: ${q(step.frameUrl)} })!`;
+  }
+  return `${base}.locator(${q(step.selector || '')})${all ? '' : '.first()'}`;
+}
+
+function stepCode(step, params) {
+  const P = (s) => resolveParams(s, params);
+  const loc = locExpr(step);
   switch (step.action) {
     case 'goto':
-      return `await page.goto(${q(step.url)});`;
+      return `await page.goto(${q(P(step.url))});`;
+    case 'reload':
+      return `await page.reload();`;
+    case 'back':
+      return `await page.goBack();`;
+    case 'wait':
+      return `await page.waitForTimeout(${Number(step.ms) || 1000});`;
     case 'click':
       return `await ${loc}.click();`;
+    case 'dblclick':
+      return `await ${loc}.dblclick();`;
     case 'hover':
       return `await ${loc}.hover();`;
     case 'fill':
-      return `await ${loc}.fill(${q(step.value != null ? step.value : '')});`;
+      return `await ${loc}.fill(${q(step.value != null ? P(step.value) : '')});`;
     case 'press':
       return step.selector
         ? `await ${loc}.press(${q(step.key)});`
         : `await page.keyboard.press(${q(step.key)});`;
     case 'select':
-      return `await ${loc}.selectOption(${q(step.value)});`;
+      return `await ${loc}.selectOption(${q(P(step.value))});`;
     case 'check':
       return `await ${loc}.check();`;
     case 'uncheck':
@@ -43,9 +65,23 @@ function stepCode(step) {
     case 'assert-unchecked':
       return `await expect(${loc}).not.toBeChecked();`;
     case 'assert-value':
-      return `await expect(${loc}).toHaveValue(${q(step.value != null ? step.value : '')});`;
+      return `await expect(${loc}).toHaveValue(${q(P(step.value != null ? step.value : ''))});`;
     case 'assert-text':
-      return `await expect(${loc}).toContainText(${q(step.text)});`;
+      return `await expect(${loc}).toContainText(${q(P(step.text))});`;
+    case 'assert-not-text':
+      return `await expect(${loc}).not.toContainText(${q(P(step.text))});`;
+    case 'assert-selected':
+      return `await expect(${loc}.locator('option:checked')).toHaveText(${q(P(step.text))});`;
+    case 'assert-attr':
+      return `await expect(${loc}).toHaveAttribute(${q(step.name)}, ${q(P(step.value))});`;
+    case 'assert-count':
+      return `await expect(${locExpr(step, { all: true })}).toHaveCount(${Number(step.count) || 0});`;
+    case 'assert-url':
+      return `await expect(page).toHaveURL(new RegExp(${q(reEsc(P(step.text)))}));`;
+    case 'assert-title':
+      return `await expect(page).toHaveTitle(new RegExp(${q(reEsc(P(step.text)))}));`;
+    case 'assert-aria':
+      return `await expect(${loc}).toMatchAriaSnapshot(${q(step.snapshot || '')});`;
     default:
       return `// bước không hỗ trợ: ${step.action}`;
   }
@@ -74,11 +110,12 @@ function generate(tc, getById) {
   if (tc.type === 'composite') {
     for (const seg of segments) {
       lines.push(`  await test.step(${q(seg.name)}, async () => {`);
-      for (const step of seg.steps) lines.push('    ' + stepCode(step));
+      for (const step of seg.steps) lines.push('    ' + stepCode(step, seg.params));
       lines.push('  });');
     }
   } else {
-    for (const step of segments[0] ? segments[0].steps : []) lines.push('  ' + stepCode(step));
+    const seg = segments[0];
+    for (const step of seg ? seg.steps : []) lines.push('  ' + stepCode(step, seg.params));
   }
   lines.push('});');
   lines.push('');

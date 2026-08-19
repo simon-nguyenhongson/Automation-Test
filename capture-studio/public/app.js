@@ -53,7 +53,15 @@ const S = {
   run: null, // live run: { tcId, name, runId, segments, results:{}, summary }
   runs: [], // persisted run history summaries
   runsFilter: '',
+  runsSelected: [], // selected runIds in the testing view
+  runsUsage: 0, // bytes taken by evidence on disk
   batch: null, // { total, done, current }
+};
+
+const fmtBytes = (b) => {
+  if (b < 1024) return fmtNum(b) + ' B';
+  if (b < 1024 * 1024) return (Math.round(b / 102.4) / 10).toLocaleString('vi-VN') + ' KB';
+  return (Math.round(b / 104857.6) / 10).toLocaleString('vi-VN') + ' MB';
 };
 
 const byId = (id) => S.tcs.find((t) => t.id === id);
@@ -62,7 +70,11 @@ const byId = (id) => S.tcs.find((t) => t.id === id);
 
 const ACTION_META = {
   goto: { label: 'Mở trang', icon: 'IconLaunch' },
+  reload: { label: 'Tải lại trang', icon: 'IconRenew' },
+  back: { label: 'Quay lại', icon: 'IconArrowLeft' },
+  wait: { label: 'Chờ', icon: 'IconTime' },
   click: { label: 'Bấm', icon: 'IconCursor1' },
+  dblclick: { label: 'Bấm đúp', icon: 'IconCursor1' },
   hover: { label: 'Di chuột', icon: 'IconArrowUpRight' },
   fill: { label: 'Nhập', icon: 'IconPen' },
   press: { label: 'Nhấn phím', icon: 'IconTerminal' },
@@ -77,20 +89,74 @@ const ACTION_META = {
   'assert-unchecked': { label: 'Kiểm tra chưa tích', icon: 'IconCheckbox' },
   'assert-value': { label: 'Kiểm tra giá trị', icon: 'IconRule' },
   'assert-text': { label: 'Kiểm tra văn bản', icon: 'IconTextAlignLeft' },
+  'assert-not-text': { label: 'Không chứa văn bản', icon: 'IconSubtractAlt' },
+  'assert-selected': { label: 'Kiểm tra lựa chọn', icon: 'IconCaretSort' },
+  'assert-attr': { label: 'Kiểm tra thuộc tính', icon: 'IconTag' },
+  'assert-count': { label: 'Kiểm tra số lượng', icon: 'IconListNumbered' },
+  'assert-url': { label: 'Kiểm tra URL', icon: 'IconLink' },
+  'assert-title': { label: 'Kiểm tra tiêu đề trang', icon: 'IconDocument' },
+  'assert-aria': { label: 'Kiểm tra cấu trúc (ARIA)', icon: 'IconTreeView' },
 };
 
 /** The editable payload of a step, if any — drives the "Sửa bước" modal. */
 function editableField(step) {
   switch (step.action) {
     case 'goto': return { key: 'url', label: 'URL' };
-    case 'fill': return { key: 'value', label: 'Giá trị nhập' };
+    case 'fill': return { key: 'value', label: 'Giá trị nhập — hỗ trợ {{tham_so}}' };
     case 'select': return { key: 'value', label: 'Giá trị chọn' };
-    case 'press': return { key: 'key', label: 'Phím' };
+    case 'press': return { key: 'key', label: 'Phím (Enter, Escape, Tab, ArrowDown…)' };
+    case 'wait': return { key: 'ms', label: 'Thời gian chờ (ms)' };
     case 'assert-text': return { key: 'text', label: 'Văn bản mong đợi' };
+    case 'assert-not-text': return { key: 'text', label: 'Văn bản không được xuất hiện' };
+    case 'assert-selected': return { key: 'text', label: 'Lựa chọn mong đợi (nhãn hiển thị)' };
     case 'assert-value': return { key: 'value', label: 'Giá trị mong đợi' };
+    case 'assert-attr': return { key: 'value', label: 'Giá trị thuộc tính mong đợi' };
+    case 'assert-count': return { key: 'count', label: 'Số lượng mong đợi' };
+    case 'assert-url': return { key: 'text', label: 'URL phải chứa' };
+    case 'assert-title': return { key: 'text', label: 'Tiêu đề phải chứa' };
     default: return null;
   }
 }
+
+/** Field sets for the manual "Thêm bước" modal. */
+const FIELD_LABELS = {
+  selector: 'Selector',
+  url: 'URL',
+  value: 'Giá trị',
+  text: 'Văn bản',
+  key: 'Phím (Enter, Escape, Tab, ArrowDown…)',
+  ms: 'Thời gian chờ (ms)',
+  name: 'Tên thuộc tính',
+  count: 'Số lượng',
+};
+const ADDABLE_STEPS = [
+  ['goto', ['url']],
+  ['reload', []],
+  ['back', []],
+  ['wait', ['ms']],
+  ['click', ['selector']],
+  ['dblclick', ['selector']],
+  ['hover', ['selector']],
+  ['fill', ['selector', 'value']],
+  ['press', ['key']],
+  ['select', ['selector', 'value']],
+  ['check', ['selector']],
+  ['uncheck', ['selector']],
+  ['assert-visible', ['selector']],
+  ['assert-hidden', ['selector']],
+  ['assert-enabled', ['selector']],
+  ['assert-disabled', ['selector']],
+  ['assert-checked', ['selector']],
+  ['assert-unchecked', ['selector']],
+  ['assert-text', ['selector', 'text']],
+  ['assert-not-text', ['selector', 'text']],
+  ['assert-value', ['selector', 'value']],
+  ['assert-selected', ['selector', 'text']],
+  ['assert-attr', ['selector', 'name', 'value']],
+  ['assert-count', ['selector', 'count']],
+  ['assert-url', ['text']],
+  ['assert-title', ['text']],
+];
 
 function stepTitle(step) {
   const meta = ACTION_META[step.action] || { label: step.action };
@@ -107,8 +173,20 @@ function stepValueHtml(step) {
   if (step.action === 'select' || step.action === 'assert-value')
     return `<span class="step-value truncate" title="${esc(step.value)}">${esc(step.value)}</span>`;
   if (step.action === 'press') return `<span class="step-value">${esc(step.key)}</span>`;
-  if (step.action === 'assert-text') return `<span class="step-value truncate" title="${esc(step.text)}">${esc(step.text)}</span>`;
+  if (step.action === 'wait') return `<span class="step-value">${fmtNum(step.ms)} ms</span>`;
+  if (step.action === 'assert-count') return `<span class="step-value">= ${fmtNum(step.count)}</span>`;
+  if (step.action === 'assert-attr')
+    return `<span class="step-value truncate" title="${esc(step.name + '=' + step.value)}">${esc(step.name)}="${esc(step.value)}"</span>`;
+  if (step.action === 'assert-aria') return `<span class="step-value">ARIA</span>`;
+  if (step.action === 'assert-text' || step.action === 'assert-not-text' || step.action === 'assert-url' || step.action === 'assert-title' || step.action === 'assert-selected')
+    return `<span class="step-value truncate" title="${esc(step.text)}">${esc(step.text)}</span>`;
   return '';
+}
+
+function selWithFrames(step) {
+  if (Array.isArray(step.frames) && step.frames.length) return step.frames.join(' » ') + ' » ' + step.selector;
+  if (step.frameUrl) return '[iframe] ' + step.selector;
+  return step.selector;
 }
 
 function stepRow(step, i, { tools = '', status = '', shot = null } = {}) {
@@ -118,7 +196,7 @@ function stepRow(step, i, { tools = '', status = '', shot = null } = {}) {
     ${icon(meta.icon)}
     <div class="step-main">
       <div class="step-title">${stepTitle(step)}</div>
-      ${step.selector ? `<div class="step-sel truncate" title="${esc(step.selector)}">${esc(step.selector)}</div>` : ''}
+      ${step.selector ? `<div class="step-sel truncate" title="${esc(selWithFrames(step))}">${esc(selWithFrames(step))}</div>` : ''}
     </div>
     ${stepValueHtml(step)}
     ${shot ? `<a class="shot-link" href="${esc(shot)}" target="_blank" title="Mở evidence"><img src="${esc(shot)}" alt="Evidence bước ${i + 1}"></a>` : ''}
@@ -262,7 +340,9 @@ function renderRuns() {
   const rows = filtered
     .map((r) => {
       const tcExists = !!byId(r.tcId);
-      return `<tr>
+      const checked = S.runsSelected.includes(r.runId);
+      return `<tr class="${checked ? 'is-selected' : ''}">
+        <td style="width:36px;text-align:center"><input type="checkbox" class="cbx" data-act="sel-run" data-id="${r.runId}" ${checked ? 'checked' : ''}></td>
         <td style="width:140px"><span class="muted" style="font-size:12px">${fmtDate(r.startedAt)}</span></td>
         <td><div class="cell-name truncate" data-act="open-run" data-id="${r.runId}" title="${esc(r.tcName)}">${esc(r.tcName)}</div>
             <div class="cell-sub mono">${r.runId}${r.headless ? ' · chạy ẩn' : ''}</div></td>
@@ -277,9 +357,23 @@ function renderRuns() {
     })
     .join('');
 
+  const filteredIds = filtered.map((r) => r.runId);
+  const allChecked = filteredIds.length > 0 && filteredIds.every((id) => S.runsSelected.includes(id));
+  const selBar = S.runsSelected.length
+    ? `<div class="select-bar">
+        <span>Đã chọn ${fmtNum(S.runsSelected.length)} lượt chạy</span>
+        <div class="actions">
+          <button class="btn btn-ghost btn-sm" data-act="clear-run-sel">Bỏ chọn</button>
+          <button class="btn btn-danger btn-sm" data-act="del-runs-sel">${icon('IconTrashCan', 12)}Xoá đã chọn</button>
+          <button class="btn btn-secondary btn-sm" data-act="rerun-sel-seq">${icon('IconPlay', 12)}Chạy lại lần lượt</button>
+          <button class="btn btn-primary btn-sm" data-act="rerun-sel-par" title="Chạy ẩn, tối đa 4 trình duyệt cùng lúc">${icon('IconActivity', 12)}Chạy lại song song</button>
+        </div>
+      </div>`
+    : '';
+
   v.innerHTML = `
     <div class="page-head">
-      <div><h1>Kiểm thử</h1><div class="sub">${fmtNum(S.runs.length)} lượt chạy — evidence chụp sau từng bước, xem lại bất kỳ lúc nào</div></div>
+      <div><h1>Kiểm thử</h1><div class="sub">${fmtNum(S.runs.length)} lượt chạy · evidence chiếm ${fmtBytes(S.runsUsage)} — xoá lượt chạy sẽ xoá cả ảnh</div></div>
       <div class="actions">
         <select class="field" style="height:32px;padding:4px 12px;width:260px" data-act="runs-filter">
           <option value="">Tất cả test case</option>
@@ -288,8 +382,10 @@ function renderRuns() {
       </div>
     </div>
     ${batchBar}
+    ${selBar}
     <div class="tbl-card"><table class="tbl">
       <thead><tr>
+        <th style="text-align:center"><input type="checkbox" class="cbx" data-act="sel-all-runs" ${allChecked ? 'checked' : ''}></th>
         <th>Thời gian</th><th>Test case</th><th>Kết quả</th><th style="text-align:right">Bước đạt</th><th style="text-align:right">Thời lượng</th><th></th>
       </tr></thead>
       <tbody>${rows || ''}</tbody>
@@ -299,6 +395,11 @@ function renderRuns() {
 
 async function refreshRuns() {
   S.runs = await api('GET', '/api/runs');
+  const ids = new Set(S.runs.map((r) => r.runId));
+  S.runsSelected = S.runsSelected.filter((id) => ids.has(id));
+  api('GET', '/api/runs-usage')
+    .then((u) => { S.runsUsage = u.bytes || 0; })
+    .catch(() => {});
 }
 
 /* ---------------- record view ---------------- */
@@ -412,10 +513,12 @@ function renderDrawer() {
       .join('');
     body = `
       ${drawerInfoFields(tc)}
+      ${paramsEditor(tc)}
       <div class="card" style="box-shadow:none">
-        <div class="card-head"><span class="title">Các bước</span><span class="caption">${fmtNum((tc.steps || []).length)} bước</span></div>
+        <div class="card-head"><span class="title">Các bước</span><span class="caption">${fmtNum((tc.steps || []).length)} bước</span>
+          <button class="btn btn-ghost btn-sm" data-act="add-step" style="margin-left:8px">${icon('IconAdd', 12)}Thêm bước</button></div>
         <div class="steps">${steps || ''}</div>
-        ${!(tc.steps || []).length ? '<div class="empty"><div class="line1">Chưa có bước nào</div><div class="line2">Ghi lại test case này để thêm bước.</div></div>' : ''}
+        ${!(tc.steps || []).length ? '<div class="empty"><div class="line1">Chưa có bước nào</div><div class="line2">Ghi lại test case này hoặc thêm bước thủ công.</div></div>' : ''}
       </div>`;
   } else {
     const children = (tc.children || [])
@@ -472,6 +575,30 @@ function renderDrawer() {
         ${d.dirty ? `<button class="btn btn-secondary" data-act="save-tc">${icon('IconSave', 12)}Lưu thay đổi</button>` : ''}
         <button class="btn btn-secondary" data-act="run-tc-headless" data-id="${tc.id}">Chạy ẩn</button>
         <button class="btn btn-primary" data-act="run-tc" data-id="${tc.id}" ${S.run && !S.run.summary ? 'disabled' : ''}>${icon('IconPlay', 12)}Chạy</button>
+      </div>
+    </div>`;
+}
+
+function paramsEditor(tc) {
+  const params = tc.params || {};
+  const keys = Object.keys(params);
+  const rows = keys
+    .map(
+      (k) => `<div class="child-row" style="min-height:36px">
+        <span class="mono" style="color:var(--color-blue-700)">{{${esc(k)}}}</span>
+        <input class="field" style="height:28px;flex:1" data-param="${esc(k)}" value="${esc(params[k])}" />
+        <span class="tools"><button class="x-btn" data-act="param-remove" data-k="${esc(k)}" title="Xoá tham số">${icon('IconClose', 12)}</button></span>
+      </div>`
+    )
+    .join('');
+  return `
+    <div class="field-row">
+      <label class="field-label">Tham số — dùng <span class="mono">{{ten}}</span> trong giá trị nhập, văn bản, URL để chạy với dữ liệu khác nhau</label>
+      ${rows}
+      <div style="display:flex;gap:8px">
+        <input class="field" style="height:32px;width:160px" id="p-key" placeholder="Tên tham số" />
+        <input class="field" style="height:32px;flex:1" id="p-val" placeholder="Giá trị mặc định" />
+        <button class="btn btn-secondary btn-sm" data-act="param-add" style="height:32px">${icon('IconAdd', 12)}Thêm</button>
       </div>
     </div>`;
 }
@@ -705,6 +832,41 @@ function modalEditStep(i) {
     </div>`);
 }
 
+function modalAddStep() {
+  const options = ADDABLE_STEPS.map(
+    ([action]) => `<option value="${action}">${esc((ACTION_META[action] || {}).label || action)}</option>`
+  ).join('');
+  openModal(`
+    <div class="modal-head"><h3>Thêm bước</h3><button class="x-btn" data-act="close-modal">${icon('IconClose')}</button></div>
+    <div class="modal-body">
+      <div class="field-row">
+        <label class="field-label" for="m-action">Loại bước</label>
+        <select class="field" id="m-action" data-act="add-step-kind">${options}</select>
+      </div>
+      <div id="add-step-fields"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" data-act="close-modal">Cancel</button>
+      <button class="btn btn-primary" data-act="apply-add-step">Thêm bước</button>
+    </div>`);
+  renderAddStepFields();
+}
+
+function renderAddStepFields() {
+  const action = $('#m-action').value;
+  const entry = ADDABLE_STEPS.find(([a]) => a === action);
+  const fields = entry ? entry[1] : [];
+  $('#add-step-fields').innerHTML = fields
+    .map(
+      (f) => `<div class="field-row">
+        <label class="field-label" for="m-f-${f}">${esc(FIELD_LABELS[f] || f)}</label>
+        <input class="field ${f === 'selector' ? 'mono' : ''}" id="m-f-${f}"
+          ${f === 'selector' ? 'style="font-family:var(--ds-font-mono);font-size:12px"' : ''} />
+      </div>`
+    )
+    .join('');
+}
+
 function modalConfirmDelete(id) {
   const tc = byId(id);
   if (!tc) return;
@@ -777,6 +939,22 @@ async function runTc(id, headless) {
       render();
     })
     .catch((err) => notify(err.message, 'error'));
+}
+
+/** Re-run the test cases behind the selected runs — sequential or parallel. */
+function rerunSelectedRuns(parallel) {
+  if (S.batch) return notify('Đang có đợt chạy khác. Chờ xong rồi chạy tiếp.', 'error');
+  const byRun = new Map(S.runs.map((r) => [r.runId, r]));
+  const tcIds = [...new Set(S.runsSelected.map((id) => (byRun.get(id) || {}).tcId))].filter((id) => byId(id));
+  if (!tcIds.length) return notify('Các test case của lượt chạy đã chọn không còn tồn tại', 'error');
+  S.batch = { total: tcIds.length, done: 0, current: null };
+  renderRuns();
+  // Parallel runs are headless — one visible window per browser would bury the desktop.
+  api('POST', '/api/run-batch', { ids: tcIds, headless: parallel, parallel }).catch((err) => {
+    S.batch = null;
+    notify(err.message, 'error');
+    render();
+  });
 }
 
 const moveItem = (arr, i, delta) => {
@@ -886,6 +1064,55 @@ const handlers = {
   },
   'open-run': (ds) => openRunDrawer(ds.id),
   'rerun': (ds) => runTc(ds.id, false),
+
+  'sel-run': (ds, el) => {
+    if (el.checked) {
+      if (!S.runsSelected.includes(ds.id)) S.runsSelected.push(ds.id);
+    } else {
+      S.runsSelected = S.runsSelected.filter((x) => x !== ds.id);
+    }
+    renderRuns();
+  },
+  'sel-all-runs': (ds, el) => {
+    const filtered = S.runsFilter ? S.runs.filter((r) => r.tcName === S.runsFilter) : S.runs;
+    const ids = filtered.map((r) => r.runId);
+    S.runsSelected = el.checked
+      ? [...new Set([...S.runsSelected, ...ids])]
+      : S.runsSelected.filter((id) => !ids.includes(id));
+    renderRuns();
+  },
+  'clear-run-sel': () => {
+    S.runsSelected = [];
+    renderRuns();
+  },
+  'del-runs-sel': () => {
+    openModal(`
+      <div class="modal-head"><h3>Xoá lượt chạy</h3><button class="x-btn" data-act="close-modal">${icon('IconClose')}</button></div>
+      <div class="modal-body">
+        <p style="margin:0;color:var(--ds-text-body)">Xoá ${fmtNum(S.runsSelected.length)} lượt chạy đã chọn?
+        Toàn bộ ảnh evidence kèm theo sẽ bị xoá để giải phóng dung lượng. Hành động này không hoàn tác được.</p>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-secondary" data-act="close-modal">Cancel</button>
+        <button class="btn btn-danger" data-act="confirm-del-runs">${icon('IconTrashCan', 12)}Xoá lượt chạy</button>
+      </div>`);
+  },
+  'confirm-del-runs': async () => {
+    try {
+      const out = await api('POST', '/api/runs/delete', { ids: S.runsSelected });
+      closeModal();
+      S.runsSelected = [];
+      await refreshRuns();
+      renderRuns();
+      renderNav();
+      notify(`Đã xoá ${fmtNum(out.deleted)} lượt chạy — giải phóng ${fmtBytes(out.freedBytes)}`, 'success');
+    } catch (err) {
+      notify(err.message, 'error');
+    }
+  },
+  'rerun-sel-seq': () => rerunSelectedRuns(false),
+  'rerun-sel-par': () => rerunSelectedRuns(true),
+
   'del-run': async (ds) => {
     try {
       await api('DELETE', '/api/runs/' + ds.id);
@@ -898,6 +1125,38 @@ const handlers = {
     }
   },
 
+  'add-step': () => modalAddStep(),
+  'apply-add-step': () => {
+    const action = $('#m-action').value;
+    const entry = ADDABLE_STEPS.find(([a]) => a === action);
+    if (!entry) return;
+    const step = { id: 'st_m' + Date.now().toString(36), action };
+    for (const f of entry[1]) {
+      const input = $('#m-f-' + f);
+      const val = input ? input.value.trim() : '';
+      if (f === 'ms' || f === 'count') step[f] = Number(val) || 0;
+      else step[f] = val;
+    }
+    if (entry[1].includes('selector') && !step.selector) return notify('Nhập selector cho bước này', 'error');
+    S.drawer.tc.steps = S.drawer.tc.steps || [];
+    S.drawer.tc.steps.push(step);
+    S.drawer.dirty = true;
+    closeModal();
+    renderDrawer();
+  },
+  'param-add': () => {
+    const k = $('#p-key').value.trim().replace(/[^\w.-]/g, '_');
+    if (!k) return notify('Nhập tên tham số', 'error');
+    S.drawer.tc.params = S.drawer.tc.params || {};
+    S.drawer.tc.params[k] = $('#p-val').value;
+    S.drawer.dirty = true;
+    renderDrawer();
+  },
+  'param-remove': (ds) => {
+    delete S.drawer.tc.params[ds.k];
+    S.drawer.dirty = true;
+    renderDrawer();
+  },
   'edit-step': (ds) => modalEditStep(Number(ds.i)),
   'apply-edit-step': (ds) => {
     const step = S.drawer.tc.steps[Number(ds.i)];
@@ -922,8 +1181,12 @@ const handlers = {
     const tc = S.drawer.tc;
     try {
       const patch = { name: tc.name, description: tc.description };
-      if (tc.type === 'atomic') patch.steps = tc.steps;
-      else patch.children = tc.children;
+      if (tc.type === 'atomic') {
+        patch.steps = tc.steps;
+        patch.params = tc.params || {};
+      } else {
+        patch.children = tc.children;
+      }
       await api('PUT', '/api/testcases/' + tc.id, patch);
       S.drawer.dirty = false;
       await refreshList();
@@ -990,6 +1253,10 @@ document.addEventListener('change', async (e) => {
       renderRuns();
       return;
     }
+    if (el.dataset.act === 'add-step-kind') {
+      renderAddStepFields();
+      return;
+    }
     if (el.dataset.act === 'child-add') {
       if (el.value) {
         S.drawer.tc.children.push(el.value);
@@ -1005,6 +1272,14 @@ document.addEventListener('change', async (e) => {
   const f = e.target.closest('[data-field]');
   if (f && S.drawer && S.drawer.kind === 'tc') {
     S.drawer.tc[f.dataset.field] = f.value;
+    S.drawer.dirty = true;
+    renderDrawer();
+    return;
+  }
+  // param value edits
+  const p = e.target.closest('[data-param]');
+  if (p && S.drawer && S.drawer.kind === 'tc') {
+    S.drawer.tc.params[p.dataset.param] = p.value;
     S.drawer.dirty = true;
     renderDrawer();
   }
@@ -1060,6 +1335,10 @@ function onWs(msg) {
       if (S.view === 'record') renderRecord();
       break;
     }
+    case 'record-steps-sync':
+      S.record.steps = msg.steps;
+      if (S.view === 'record') renderRecord();
+      break;
     case 'record-mode':
       S.record.mode = msg.mode;
       if (S.view === 'record') renderRecord();

@@ -13,10 +13,18 @@ npm run studio          # http://localhost:4700
 
 1. **Ghi test case mới** — nhập URL, Chromium mở ra, thao tác trên trang. Mỗi thao tác
    (bấm, nhập, chọn, tích) thành một bước, hiện live trong studio.
-2. **Chế độ kiểm tra** — bật toggle rồi bấm vào phần tử trên trang: một menu mở ra
-   đọc trạng thái thực của phần tử để chọn bước kiểm tra — hiển thị / đã ẩn, đang bật /
-   bị vô hiệu (bấm được cả nút disabled), đã tích / chưa tích, đúng văn bản, đúng giá trị
-   ô nhập; kèm hành động di chuột (hover). Trạng thái hiện tại được đánh dấu "· hiện tại".
+2. **Chế độ kiểm tra** — chuyển bằng thanh công cụ nổi trong cửa sổ ghi. Bấm vào phần tử
+   để mở menu đọc trạng thái thực và chọn bước kiểm tra: hiển thị / đã ẩn, đang bật /
+   bị vô hiệu (bấm được cả nút disabled), đã tích / chưa tích, văn bản (chứa / không chứa),
+   giá trị ô nhập, **lựa chọn đang hiển thị của dropdown** (so nhãn, không so value ẩn),
+   thuộc tính bất kỳ, số phần tử khớp selector, URL trang, tiêu đề trang,
+   và cấu trúc cả vùng bằng ARIA snapshot. Ngoài các giá trị đang có sẵn trên trang,
+   mục **"Tự nhập giá trị kiểm tra"** cho gõ tay giá trị mong đợi (ví dụ `ABC`) rồi chọn
+   kiểu so khớp — hỗ trợ cả tham số `{{...}}`. Ghi cả thao tác trong iframe (same-origin
+   dùng chuỗi frame, cross-origin theo URL); bấm đúp được gộp tự động.
+   Bổ sung: mỗi test case có **tham số** — dùng `{{ten}}` trong giá trị nhập / văn bản /
+   URL và khai báo giá trị mặc định trong ngăn chi tiết; có thể **thêm bước thủ công**
+   (chờ, tải lại trang, quay lại, nhấn phím bất kỳ, mọi loại kiểm tra) không cần ghi.
 3. **Dừng và lưu** — đặt tên, test case con được lưu vào `data/testcases/*.json`.
 4. **Sửa bước** — trong ngăn chi tiết, mỗi bước sửa được selector và giá trị mong đợi,
    đổi thứ tự hoặc xoá.

@@ -1,0 +1,69 @@
+{
+  "id": "tc_82c07246",
+  "type": "atomic",
+  "name": "4",
+  "description": "",
+  "createdAt": "2026-08-19T16:39:22.704Z",
+  "updatedAt": "2026-08-19T16:39:28.629Z",
+  "lastRun": {
+    "status": "failed",
+    "at": "2026-08-19T16:39:28.628Z",
+    "passed": 7,
+    "total": 8
+  },
+  "baseUrl": "https://github.com/simon-nguyenhongson/Crawl.git",
+  "steps": [
+    {
+      "id": "st_1",
+      "action": "goto",
+      "url": "https://github.com/simon-nguyenhongson/Crawl.git"
+    },
+    {
+      "id": "st_2",
+      "selector": "strong > a",
+      "label": "Crawl",
+      "action": "assert-aria",
+      "snapshot": "- link \"Crawl\":\n  - /url: /simon-nguyenhongson/Crawl"
+    },
+    {
+      "id": "st_3",
+      "selector": "span:nth-of-type(4)",
+      "label": "Public",
+      "action": "hover"
+    },
+    {
+      "id": "st_4",
+      "selector": "span:nth-of-type(4)",
+      "label": "Public",
+      "action": "hover"
+    },
+    {
+      "id": "st_5",
+      "selector": "#repository-container-header > div:nth-of-type(1) > div:nth-of-type(1) > div",
+      "label": "simon-nguyenhongson / Crawl Public",
+      "action": "assert-count",
+      "count": 1
+    },
+    {
+      "id": "st_6",
+      "selector": "#insights-tab",
+      "label": "Insights",
+      "action": "assert-text",
+      "text": "Insights"
+    },
+    {
+      "id": "st_7",
+      "selector": "#insights-tab",
+      "label": "Insights",
+      "action": "assert-visible"
+    },
+    {
+      "id": "st_8",
+      "selector": "#insights-tab",
+      "label": "Insights",
+      "action": "assert-not-text",
+      "text": "Insights"
+    }
+  ],
+  "params": {}
+}

@@ -1,0 +1,59 @@
+{
+  "id": "tc_9ac9c40b",
+  "type": "atomic",
+  "name": "5",
+  "description": "",
+  "createdAt": "2026-08-19T16:56:16.536Z",
+  "updatedAt": "2026-08-19T16:56:40.974Z",
+  "lastRun": {
+    "status": "failed",
+    "at": "2026-08-19T16:56:40.974Z",
+    "passed": 1,
+    "total": 7
+  },
+  "baseUrl": "https://github.com/simon-nguyenhongson/Crawl.git",
+  "steps": [
+    {
+      "id": "st_1",
+      "action": "goto",
+      "url": "https://github.com/simon-nguyenhongson/Crawl.git"
+    },
+    {
+      "id": "st_2",
+      "selector": "span:nth-of-type(4)",
+      "label": "Public",
+      "action": "assert-not-text",
+      "text": "Public"
+    },
+    {
+      "id": "st_3",
+      "action": "click",
+      "selector": "#repository-details-watch-button",
+      "label": "Notifications"
+    },
+    {
+      "id": "st_4",
+      "action": "goto",
+      "url": "https://github.com/simon-nguyenhongson/Crawl"
+    },
+    {
+      "id": "st_5",
+      "selector": "li:nth-of-type(4) > div > button",
+      "label": "Open Source",
+      "action": "assert-enabled"
+    },
+    {
+      "id": "st_6",
+      "action": "click",
+      "selector": "li:nth-of-type(4) > div > button",
+      "label": "Open Source"
+    },
+    {
+      "id": "st_7",
+      "action": "click",
+      "selector": "li:nth-of-type(4) > div > button",
+      "label": "Open Source"
+    }
+  ],
+  "params": {}
+}

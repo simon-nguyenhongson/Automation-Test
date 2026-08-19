@@ -2,6 +2,7 @@
 // reports per-step progress through the emit callback.
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { chromium } = require('playwright');
 
 const RUNS_DIR = path.join(__dirname, '..', 'data', 'runs');
@@ -13,7 +14,7 @@ function flatten(tc, getById, trail = []) {
     throw new Error('Test case tổng hợp chứa vòng lặp: ' + tc.name);
   }
   if (tc.type === 'atomic') {
-    return [{ id: tc.id, name: tc.name, steps: tc.steps || [] }];
+    return [{ id: tc.id, name: tc.name, steps: tc.steps || [], params: tc.params || {} }];
   }
   const out = [];
   for (const childId of tc.children || []) {
@@ -23,6 +24,35 @@ function flatten(tc, getById, trail = []) {
   }
   return out;
 }
+
+/** Substitute {{ten_bien}} placeholders with test-case params. */
+function resolveParams(s, params) {
+  if (s == null) return s;
+  return String(s).replace(/\{\{\s*([\w.-]+)\s*\}\}/g, (m, k) =>
+    params && Object.prototype.hasOwnProperty.call(params, k) ? String(params[k]) : m
+  );
+}
+
+/** Resolve the search scope for a step — main frame, a frameLocator chain
+    (same-origin iframes) or a frame found by URL (cross-origin). */
+function scopeFor(page, step) {
+  if (Array.isArray(step.frames) && step.frames.length) {
+    let scope = page;
+    for (const f of step.frames) scope = scope.frameLocator(f);
+    return scope;
+  }
+  if (step.frameUrl) {
+    const target = String(step.frameUrl).split('#')[0];
+    const fr =
+      page.frames().find((x) => x.url().split('#')[0] === target) ||
+      page.frames().find((x) => x.url().startsWith(target.split('?')[0]));
+    if (!fr) throw new Error('Không tìm thấy iframe: ' + step.frameUrl);
+    return fr;
+  }
+  return page;
+}
+
+const locFor = (page, step) => (step.selector ? scopeFor(page, step).locator(step.selector).first() : null);
 
 function cleanError(err) {
   const msg = String((err && err.message) || err);
@@ -42,27 +72,40 @@ async function pollTrue(page, fn, message) {
   throw new Error(message);
 }
 
-async function execStep(page, step) {
-  const loc = step.selector ? page.locator(step.selector).first() : null;
+async function execStep(page, step, params) {
+  const P = (s) => resolveParams(s, params);
+  const loc = locFor(page, step);
   switch (step.action) {
     case 'goto':
-      await page.goto(step.url, { waitUntil: 'domcontentloaded', timeout: 20000 });
+      await page.goto(P(step.url), { waitUntil: 'domcontentloaded', timeout: 20000 });
+      return;
+    case 'reload':
+      await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+      return;
+    case 'back':
+      await page.goBack({ waitUntil: 'domcontentloaded', timeout: 20000 });
+      return;
+    case 'wait':
+      await page.waitForTimeout(Math.min(Number(step.ms) || 1000, 60000));
       return;
     case 'click':
       await loc.click({ timeout: STEP_TIMEOUT });
+      return;
+    case 'dblclick':
+      await loc.dblclick({ timeout: STEP_TIMEOUT });
       return;
     case 'hover':
       await loc.hover({ timeout: STEP_TIMEOUT });
       return;
     case 'fill':
-      await loc.fill(step.value != null ? String(step.value) : '', { timeout: STEP_TIMEOUT });
+      await loc.fill(step.value != null ? P(step.value) : '', { timeout: STEP_TIMEOUT });
       return;
     case 'press':
       if (loc) await loc.press(step.key, { timeout: STEP_TIMEOUT });
       else await page.keyboard.press(step.key);
       return;
     case 'select':
-      await loc.selectOption(step.value, { timeout: STEP_TIMEOUT });
+      await loc.selectOption(P(step.value), { timeout: STEP_TIMEOUT });
       return;
     case 'check':
       await loc.setChecked(true, { timeout: STEP_TIMEOUT });
@@ -102,7 +145,7 @@ async function execStep(page, step) {
       return;
     case 'assert-value': {
       await loc.waitFor({ state: 'visible', timeout: STEP_TIMEOUT });
-      const expected = String(step.value != null ? step.value : '');
+      const expected = String(step.value != null ? P(step.value) : '');
       const deadline = Date.now() + STEP_TIMEOUT;
       let last = '';
       while (Date.now() < deadline) {
@@ -112,17 +155,98 @@ async function execStep(page, step) {
       }
       throw new Error(`Giá trị không khớp — mong đợi "${expected}", thực tế "${last.slice(0, 60)}"`);
     }
+    case 'assert-selected': {
+      // Compare the option label the user sees, not the hidden value.
+      await loc.waitFor({ state: 'visible', timeout: STEP_TIMEOUT });
+      const expected = P(step.text);
+      const deadline = Date.now() + STEP_TIMEOUT;
+      let last = '';
+      while (Date.now() < deadline) {
+        last = await loc
+          .evaluate((el) => {
+            const opt = el.selectedOptions ? el.selectedOptions[0] : null;
+            return opt ? String(opt.label || opt.text || '').trim() : '';
+          })
+          .catch(() => '');
+        if (last === expected) return;
+        await page.waitForTimeout(150);
+      }
+      throw new Error(`Lựa chọn không khớp — mong đợi "${expected}", thực tế "${last.slice(0, 60)}"`);
+    }
+    case 'assert-not-text': {
+      await loc.waitFor({ state: 'visible', timeout: STEP_TIMEOUT });
+      await page.waitForTimeout(300); // let the UI settle
+      const bad = P(step.text);
+      const now = ((await loc.innerText().catch(() => '')) || '').replace(/\s+/g, ' ');
+      if (now.includes(bad)) {
+        throw new Error(`Văn bản "${bad}" vẫn đang hiển thị`);
+      }
+      return;
+    }
+    case 'assert-attr': {
+      await loc.waitFor({ state: 'attached', timeout: STEP_TIMEOUT });
+      const expected = String(P(step.value));
+      await pollTrue(
+        page,
+        async () => (await loc.getAttribute(step.name)) === expected,
+        `Thuộc tính ${step.name} không khớp — mong đợi "${expected}"`
+      );
+      return;
+    }
+    case 'assert-count': {
+      const scope = scopeFor(page, step);
+      const expected = Number(step.count);
+      const deadline = Date.now() + STEP_TIMEOUT;
+      let last = -1;
+      while (Date.now() < deadline) {
+        last = await scope.locator(step.selector).count().catch(() => -1);
+        if (last === expected) return;
+        await page.waitForTimeout(150);
+      }
+      throw new Error(`Số phần tử không khớp — mong đợi ${expected}, thực tế ${last}`);
+    }
+    case 'assert-url':
+      await pollTrue(page, () => page.url().includes(P(step.text)), `URL không chứa "${P(step.text)}" — thực tế: ${page.url()}`);
+      return;
+    case 'assert-title': {
+      const expected = P(step.text);
+      await pollTrue(
+        page,
+        async () => (await page.title()).includes(expected),
+        `Tiêu đề trang không chứa "${expected}"`
+      );
+      return;
+    }
+    case 'assert-aria': {
+      await loc.waitFor({ state: 'visible', timeout: STEP_TIMEOUT });
+      const norm = (s) =>
+        String(s || '')
+          .split('\n')
+          .map((l) => l.trimEnd())
+          .filter(Boolean)
+          .join('\n');
+      const expected = norm(step.snapshot);
+      const deadline = Date.now() + STEP_TIMEOUT;
+      let last = '';
+      while (Date.now() < deadline) {
+        last = norm(await loc.ariaSnapshot().catch(() => ''));
+        if (last === expected) return;
+        await page.waitForTimeout(300);
+      }
+      throw new Error('Cấu trúc ARIA của vùng không khớp bản đã ghi');
+    }
     case 'assert-text': {
       await loc.waitFor({ state: 'visible', timeout: STEP_TIMEOUT });
+      const expected = P(step.text);
       const deadline = Date.now() + STEP_TIMEOUT;
       let last = '';
       while (Date.now() < deadline) {
         last = (await loc.innerText().catch(() => '')) || '';
-        if (last.replace(/\s+/g, ' ').includes(step.text)) return;
+        if (last.replace(/\s+/g, ' ').includes(expected)) return;
         await page.waitForTimeout(200);
       }
       throw new Error(
-        `Không thấy văn bản "${step.text}" — thực tế: "${last.replace(/\s+/g, ' ').slice(0, 80)}"`
+        `Không thấy văn bản "${expected}" — thực tế: "${last.replace(/\s+/g, ' ').slice(0, 80)}"`
       );
     }
     default:
@@ -132,7 +256,8 @@ async function execStep(page, step) {
 
 async function runTestCase(tc, getById, { headless = false, emit = () => {} } = {}) {
   const segments = flatten(tc, getById); // throws before anything launches
-  const runId = 'run_' + Date.now().toString(36);
+  // Random suffix — parallel runs can start within the same millisecond.
+  const runId = 'run_' + Date.now().toString(36) + crypto.randomBytes(3).toString('hex');
   const startedAt = Date.now();
 
   emit({
@@ -198,7 +323,7 @@ async function runTestCase(tc, getById, { headless = false, emit = () => {} } = 
         const rec = record.segments[si].steps[i];
         emit({ type: 'run-step', runId, segIndex: si, stepIndex: i, stepId: step.id, status: 'running' });
         try {
-          await execStep(page, step);
+          await execStep(page, step, seg.params);
           passed++;
           rec.status = 'passed';
           rec.shot = await snap(page, si, i);
@@ -291,11 +416,30 @@ function getRun(id) {
   }
 }
 
-function deleteRun(id) {
-  const dir = path.join(RUNS_DIR, safeRunId(id));
-  if (!fs.existsSync(dir)) return false;
-  fs.rmSync(dir, { recursive: true, force: true });
-  return true;
+function dirSize(dir) {
+  let total = 0;
+  try {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, entry.name);
+      if (entry.isDirectory()) total += dirSize(p);
+      else total += fs.statSync(p).size;
+    }
+  } catch { /* best-effort */ }
+  return total;
 }
 
-module.exports = { runTestCase, flatten, listRuns, getRun, deleteRun };
+/** Deletes the whole run folder — evidence images included. Returns freed bytes. */
+function deleteRun(id) {
+  const dir = path.join(RUNS_DIR, safeRunId(id));
+  if (!fs.existsSync(dir)) return null;
+  const freed = dirSize(dir);
+  fs.rmSync(dir, { recursive: true, force: true });
+  return freed;
+}
+
+/** Total disk usage of all run artifacts. */
+function runsUsage() {
+  return fs.existsSync(RUNS_DIR) ? dirSize(RUNS_DIR) : 0;
+}
+
+module.exports = { runTestCase, flatten, listRuns, getRun, deleteRun, runsUsage, resolveParams };

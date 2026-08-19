@@ -23,7 +23,7 @@ class RecorderSession extends EventEmitter {
     this.active = true;
     this.browser = await chromium.launch({ headless });
     this.context = await this.browser.newContext({ viewport: null });
-    await this.context.exposeBinding('__csRecord', (source, step) => this._onStep(step));
+    await this.context.exposeBinding('__csRecord', (source, step) => this._onStep(step, source.page));
     // In-page toolbar switches mode for the whole session (all pages + studio UI).
     await this.context.exposeBinding('__csModeRequest', (source, mode) => this.setMode(mode));
     await this.context.addInitScript(PAGE_SCRIPT);
@@ -57,7 +57,7 @@ class RecorderSession extends EventEmitter {
     });
   }
 
-  _onStep(step) {
+  _onStep(step, page) {
     if (!this.active) return;
     this._lastEventAt = Date.now();
     if (step.action === 'fill') {
@@ -69,6 +69,39 @@ class RecorderSession extends EventEmitter {
         return;
       }
     }
+    if (step.action === 'dblclick') {
+      // The double click arrives after its two single clicks — replace them.
+      let removed = 0;
+      while (removed < 2) {
+        const last = this.steps[this.steps.length - 1];
+        if (last && last.action === 'click' && last.selector === step.selector) {
+          this.steps.pop();
+          removed++;
+        } else break;
+      }
+      this._recordRaw(step);
+      if (removed) this.emit('steps-sync', this.steps.slice());
+      return;
+    }
+    if (step.action === 'assert-aria' && page) {
+      // The ARIA snapshot template is captured Node-side at record time.
+      this._captureAria(step, page);
+      return;
+    }
+    this._recordRaw(step);
+  }
+
+  async _captureAria(step, page) {
+    try {
+      let scope = page;
+      if (Array.isArray(step.frames)) {
+        for (const f of step.frames) scope = scope.frameLocator(f);
+      }
+      step.snapshot = await scope.locator(step.selector).first().ariaSnapshot({ timeout: 3000 });
+    } catch {
+      step.snapshot = '';
+    }
+    if (!this.active) return;
     this._recordRaw(step);
   }
 
