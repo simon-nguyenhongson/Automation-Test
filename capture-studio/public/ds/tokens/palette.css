@@ -1,0 +1,54 @@
+/* Palette — measured from the Figma source, with real usage counts.
+   These are the colours the file actually paints with; nothing is rounded or invented. */
+
+:root {
+  /* Base */
+  --color-white: #FFFFFF;              /* 10,938 uses */
+  --color-black: #000000;              /* 1,631 uses */
+  --color-ink: #161616;                /* 1,928 uses */
+
+  /* Blue dark — primary / interactive */
+  --color-blue-25: #F5F8FF;
+  --color-blue-50: #EFF4FF;            /* 296 — focus ring, subtle fill */
+  --color-blue-100: #D1E0FF;           /* 264 — selection, badge border */
+  --color-blue-200: #B2CCFF;           /* 164 — loading fill, hover border */
+  --color-blue-300: #84ADFF;           /* focus border, spinner track */
+  --color-blue-400: #528BFF;           /* 160 */
+  --color-blue-500: #2970FF;           /* 149 */
+  --color-blue-600: #155EEF;           /* 577 — PRIMARY */
+  --color-blue-700: #004EEB;           /* link hover */
+
+  /* Gray — neutral foundation */
+  --color-gray-25: #FCFCFD;
+  --color-gray-50: #F9FAFB;            /* 1,012 — header fill, zebra row */
+  --color-gray-100: #F2F4F7;           /* 617 — divider, track */
+  --color-gray-200: #EAECF0;           /* 4,513 — DEFAULT BORDER */
+  --color-gray-300: #D0D5DD;           /* 968 — field border */
+  --color-gray-400: #98A2B3;           /* 207 — disabled text, placeholder */
+  --color-gray-500: #667085;           /* 1,307 — secondary text */
+  --color-gray-600: #475467;           /* 553 — body text */
+  --color-gray-700: #344054;           /* 1,299 — label, strong body */
+  --color-gray-900: #101828;           /* 1,684 — PRIMARY TEXT */
+  --color-gray-blue-300: #D3DAE6;      /* 102 — table rule on gray surfaces */
+
+  /* Error / destructive */
+  --color-error-25: #FFFBFA;
+  --color-error-50: #FEF3F2;
+  --color-error-100: #FECDCA;
+  --color-error-300: #FDA29B;          /* 109 */
+  --color-error-500: #F04438;          /* 392 — DANGER */
+  --color-error-600: #D92D20;          /* 109 */
+  --color-error-700: #B42318;
+
+  /* Purple / violet — Badge + Tab carry their own primary in this file */
+  --color-purple-50: #F9F5FF;          /* 147 */
+  --color-purple-500: #9747FF;         /* 114 */
+  --color-violet-600: #7F56D9;         /* Badge primary fill */
+  --color-violet-700: #6941C6;         /* Tab active underline + label */
+
+  /* Brand gradient stops */
+  --color-brand-gradient-1: #027FFE;   /* 15.24% */
+  --color-brand-gradient-2: #02CCCC;   /* 72.81% */
+  --color-brand-gradient-3: #02E2BD;   /* 89.43% */
+  --color-brand-gradient-deep: #0251D2; /* logo mark, lower lobe */
+}

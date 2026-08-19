@@ -1,0 +1,6 @@
+/* Webfonts.
+   The .fig carried no font binaries, so both families are pulled from Google Fonts,
+   which is where Inter and IBM Plex Sans are published. Swap this @import for local
+   @font-face rules if you have licensed binaries — see readme.md → CAVEATS. */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;600;700&display=swap");

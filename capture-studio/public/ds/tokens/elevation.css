@@ -1,0 +1,10 @@
+/* Shadows — one tone only: #101828 at 3% / 5% / 6% / 8% / 10%.
+   Never a pure-black shadow. */
+
+:root {
+  --ds-shadow-xs: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
+  --ds-shadow-sm: 0px 1px 3px 0px rgba(16, 24, 40, 0.10), 0px 1px 2px 0px rgba(16, 24, 40, 0.06);
+  --ds-shadow-md: 0px 4px 8px -2px rgba(16, 24, 40, 0.10), 0px 2px 4px -2px rgba(16, 24, 40, 0.06);
+  --ds-shadow-lg: 0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03);
+  --ds-shadow-xl: 0px 20px 24px -4px rgba(16, 24, 40, 0.08), 0px 8px 8px -4px rgba(16, 24, 40, 0.03);
+}

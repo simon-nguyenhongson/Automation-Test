@@ -1,0 +1,19 @@
+/* Minimal resets that the documented pages assume. */
+
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ds-surface-page);
+  color: var(--ds-text-primary);
+  font-family: var(--ds-font-sans);
+  font-size: var(--ds-text-sm-size);
+  line-height: var(--ds-text-sm-line);
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--ds-text-link); text-decoration: none; }
+a:hover { color: var(--ds-text-link-hover); }
+::selection { background: var(--color-blue-100); }

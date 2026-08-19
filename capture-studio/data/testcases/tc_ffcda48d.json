@@ -1,0 +1,18 @@
+{
+  "id": "tc_ffcda48d",
+  "type": "composite",
+  "name": "Luồng khám phá tài liệu",
+  "description": "Trang chủ rồi vào tài liệu cài đặt",
+  "createdAt": "2026-08-19T15:25:14.512Z",
+  "updatedAt": "2026-08-19T16:09:33.833Z",
+  "lastRun": {
+    "status": "passed",
+    "at": "2026-08-19T16:09:33.833Z",
+    "passed": 6,
+    "total": 6
+  },
+  "children": [
+    "tc_6903a79d",
+    "tc_50046c29"
+  ]
+}

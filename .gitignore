@@ -6,3 +6,6 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Capture Studio — run artifacts (screenshots); test cases in data/testcases are kept
+/capture-studio/data/runs/

@@ -1,0 +1,59 @@
+/* Semantic aliases — what to reach for when writing UI.
+   Always prefer these over raw palette steps. */
+
+:root {
+  /* Surfaces */
+  --ds-surface-page: var(--color-white);
+  --ds-surface-card: var(--color-white);
+  --ds-surface-sunken: var(--color-gray-25);
+  --ds-surface-muted: var(--color-gray-50);
+  --ds-surface-header: var(--color-gray-50);
+  --ds-surface-inverse: var(--color-gray-900);
+  --ds-surface-selected: var(--color-blue-50);
+  --ds-surface-danger-subtle: var(--color-error-50);
+
+  /* Text */
+  --ds-text-primary: var(--color-gray-900);
+  --ds-text-body: var(--color-gray-600);
+  --ds-text-label: var(--color-gray-700);
+  --ds-text-secondary: var(--color-gray-500);
+  --ds-text-placeholder: var(--color-gray-400);
+  --ds-text-disabled: var(--color-gray-400);
+  --ds-text-on-brand: var(--color-white);
+  --ds-text-link: var(--color-blue-600);
+  --ds-text-link-hover: var(--color-blue-700);
+  --ds-text-danger: var(--color-error-700);
+
+  /* Borders */
+  --ds-border-default: var(--color-gray-200);
+  --ds-border-field: var(--color-gray-300);
+  --ds-border-subtle: var(--color-gray-100);
+  --ds-border-strong: var(--color-gray-300);
+  --ds-border-brand: var(--color-blue-100);
+  --ds-border-focus: var(--color-blue-300);
+  --ds-border-danger: var(--color-error-100);
+
+  /* Interactive — brand */
+  --ds-brand: var(--color-blue-600);
+  --ds-brand-hover: var(--color-blue-700);
+  --ds-brand-pressed: var(--color-blue-700);
+  --ds-brand-subtle: var(--color-blue-50);
+  --ds-brand-loading: var(--color-blue-200);
+
+  /* Interactive — destructive */
+  --ds-danger: var(--color-error-500);
+  --ds-danger-hover: var(--color-error-600);
+  --ds-danger-subtle: var(--color-error-50);
+
+  /* Focus ring — 4px halo, never an outline */
+  --ds-focus-ring: 0 0 0 4px var(--color-blue-50);
+  --ds-focus-ring-danger: 0 0 0 4px var(--color-error-50);
+
+  /* Brand gradient — the 4px/12px rule at the top of every documented page */
+  --ds-brand-gradient: linear-gradient(
+    90deg,
+    var(--color-brand-gradient-1) 15.24%,
+    var(--color-brand-gradient-2) 72.81%,
+    var(--color-brand-gradient-3) 89.43%
+  );
+}

@@ -1,0 +1,12 @@
+/* SooBinZHongSon Design System — token entry for Capture Studio.
+   Copied from the source repo; import lines only, component CSS is authored
+   per the written guidelines in studio.css. */
+
+@import "./tokens/fonts.css";
+@import "./tokens/palette.css";
+@import "./tokens/semantic.css";
+@import "./tokens/typography.css";
+@import "./tokens/elevation.css";
+@import "./tokens/layout.css";
+@import "./tokens/figma-variables.css";
+@import "./tokens/base.css";

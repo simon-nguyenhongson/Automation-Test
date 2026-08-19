@@ -1,0 +1,30 @@
+/* Type scale — Inter for all UI, IBM Plex Sans for the logotype only.
+   14/20 is the working size: it outnumbers every other step in the source. */
+
+:root {
+  --ds-font-sans: Inter, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ds-font-logo: "IBM Plex Sans", Inter, sans-serif;
+  --ds-font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --ds-weight-regular: 400;
+  --ds-weight-medium: 500;
+  --ds-weight-semibold: 600;
+  --ds-weight-bold: 700;
+
+  /* size / line-height pairs */
+  --ds-text-xs-size: 12px;      --ds-text-xs-line: 18px;
+  --ds-text-sm-size: 14px;      --ds-text-sm-line: 20px;   /* default */
+  --ds-text-md-size: 16px;      --ds-text-md-line: 24px;
+  --ds-text-lg-size: 18px;      --ds-text-lg-line: 28px;
+  --ds-text-xl-size: 20px;      --ds-text-xl-line: 30px;
+  --ds-display-xs-size: 24px;   --ds-display-xs-line: 32px;
+  --ds-display-sm-size: 30px;   --ds-display-sm-line: 38px;
+  --ds-display-md-size: 36px;   --ds-display-md-line: 44px;
+  --ds-display-lg-size: 48px;   --ds-display-lg-line: 60px;
+  --ds-display-xl-size: 60px;   --ds-display-xl-line: 72px;
+
+  /* Display steps carry negative tracking; text steps do not. */
+  --ds-tracking-display: -0.02em;
+  --ds-tracking-text: 0;
+  --ds-tracking-eyebrow: 0.06em;
+}

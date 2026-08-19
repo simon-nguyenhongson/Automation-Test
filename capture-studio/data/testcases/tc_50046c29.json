@@ -1,0 +1,35 @@
+{
+  "id": "tc_50046c29",
+  "type": "atomic",
+  "name": "Mở tài liệu cài đặt",
+  "description": "Đi tới Get started từ trang chủ",
+  "createdAt": "2026-08-19T15:25:14.509Z",
+  "updatedAt": "2026-08-19T16:11:12.294Z",
+  "lastRun": {
+    "status": "passed",
+    "at": "2026-08-19T16:11:12.294Z",
+    "passed": 3,
+    "total": 3
+  },
+  "baseUrl": "https://playwright.dev",
+  "steps": [
+    {
+      "id": "st_1",
+      "action": "goto",
+      "url": "https://playwright.dev/"
+    },
+    {
+      "id": "st_2",
+      "action": "click",
+      "selector": "a.getStarted_Sjon",
+      "label": "Get started"
+    },
+    {
+      "id": "st_3",
+      "action": "assert-text",
+      "selector": "article h1",
+      "text": "Installation",
+      "label": "Installation"
+    }
+  ]
+}

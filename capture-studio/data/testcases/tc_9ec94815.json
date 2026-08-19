@@ -1,0 +1,23 @@
+{
+  "id": "tc_9ec94815",
+  "type": "composite",
+  "name": "3",
+  "description": "",
+  "createdAt": "2026-08-19T15:55:40.871Z",
+  "updatedAt": "2026-08-19T16:09:49.274Z",
+  "lastRun": {
+    "status": "failed",
+    "at": "2026-08-19T16:09:49.274Z",
+    "passed": 10,
+    "total": 45
+  },
+  "children": [
+    "tc_7c0db650",
+    "tc_283c1752",
+    "tc_ffcda48d",
+    "tc_f144e70b",
+    "tc_823e925f",
+    "tc_50046c29",
+    "tc_6903a79d"
+  ]
+}

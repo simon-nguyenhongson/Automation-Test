@@ -1,0 +1,148 @@
+{
+  "id": "tc_f144e70b",
+  "type": "atomic",
+  "name": "hi",
+  "description": "",
+  "createdAt": "2026-08-19T15:32:53.938Z",
+  "updatedAt": "2026-08-19T16:10:15.396Z",
+  "lastRun": {
+    "status": "passed",
+    "at": "2026-08-19T16:10:15.395Z",
+    "passed": 19,
+    "total": 19
+  },
+  "baseUrl": "https://github.com/firecrawl/firecrawl",
+  "steps": [
+    {
+      "id": "st_goto",
+      "action": "goto",
+      "url": "https://github.com/firecrawl/firecrawl"
+    },
+    {
+      "id": "st_3",
+      "action": "click",
+      "selector": "#folder-row-8 > td:nth-of-type(2) > div",
+      "label": ".gitattributes"
+    },
+    {
+      "id": "st_4",
+      "action": "fill",
+      "selector": "input",
+      "value": "ABC",
+      "secret": false,
+      "label": "Go to file"
+    },
+    {
+      "id": "st_5",
+      "action": "press",
+      "selector": "input",
+      "key": "Enter",
+      "label": "Go to file"
+    },
+    {
+      "id": "st_6",
+      "action": "fill",
+      "selector": "input",
+      "value": "ABC",
+      "secret": false,
+      "label": "Go to file"
+    },
+    {
+      "id": "st_7",
+      "action": "press",
+      "selector": "input",
+      "key": "Enter",
+      "label": "Go to file"
+    },
+    {
+      "id": "st_8",
+      "action": "click",
+      "selector": "div:nth-of-type(6) > a",
+      "label": "Search for this symbol"
+    },
+    {
+      "id": "st_9",
+      "action": "click",
+      "selector": "header > div:nth-of-type(1) > div:nth-of-type(1) > a",
+      "label": "Homepage"
+    },
+    {
+      "id": "st_10",
+      "action": "fill",
+      "selector": "#hero_user_email",
+      "value": "HI",
+      "secret": false,
+      "label": "you@domain.com"
+    },
+    {
+      "id": "st_11",
+      "action": "press",
+      "selector": "#hero_user_email",
+      "key": "Enter",
+      "label": "you@domain.com"
+    },
+    {
+      "id": "st_12",
+      "action": "fill",
+      "selector": "#hero_user_email",
+      "value": "HI",
+      "secret": false,
+      "label": "you@domain.com"
+    },
+    {
+      "id": "st_13",
+      "action": "press",
+      "selector": "#hero_user_email",
+      "key": "Enter",
+      "label": "you@domain.com"
+    },
+    {
+      "id": "st_14",
+      "action": "click",
+      "selector": "#FormControl--_R_9l8l_ > div > button",
+      "label": "Sign up for GitHub"
+    },
+    {
+      "id": "st_15",
+      "action": "click",
+      "selector": "div > div:nth-of-type(2) > div > div > div:nth-of-type(2) > a",
+      "label": "Sign in"
+    },
+    {
+      "id": "st_16",
+      "action": "click",
+      "selector": "form:nth-of-type(2) > button",
+      "label": "Continue with Google"
+    },
+    {
+      "id": "st_17",
+      "action": "fill",
+      "selector": "#identifierId",
+      "value": "simon",
+      "secret": false,
+      "label": "Email or phone"
+    },
+    {
+      "id": "st_18",
+      "action": "press",
+      "selector": "#identifierId",
+      "key": "Enter",
+      "label": "Email or phone"
+    },
+    {
+      "id": "st_19",
+      "action": "fill",
+      "selector": "#identifierId",
+      "value": "simon",
+      "secret": false,
+      "label": "Email or phone"
+    },
+    {
+      "id": "st_20",
+      "action": "press",
+      "selector": "#identifierId",
+      "key": "Enter",
+      "label": "Email or phone"
+    }
+  ]
+}

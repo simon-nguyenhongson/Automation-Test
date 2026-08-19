@@ -1,0 +1,64 @@
+{
+  "id": "tc_283c1752",
+  "type": "atomic",
+  "name": "1",
+  "description": "",
+  "createdAt": "2026-08-19T15:46:01.171Z",
+  "updatedAt": "2026-08-19T16:10:06.942Z",
+  "lastRun": {
+    "status": "failed",
+    "at": "2026-08-19T16:10:06.942Z",
+    "passed": 3,
+    "total": 8
+  },
+  "baseUrl": "https://github.com/firecrawl/firecrawl",
+  "steps": [
+    {
+      "id": "st_goto",
+      "action": "goto",
+      "url": "https://github.com/firecrawl/firecrawl"
+    },
+    {
+      "id": "st_3",
+      "action": "click",
+      "selector": "header > div:nth-of-type(1) > div:nth-of-type(2) > div > div",
+      "label": "Sign in Sign up"
+    },
+    {
+      "id": "st_4",
+      "action": "click",
+      "selector": "#_R_3idahlek5_",
+      "label": "Code"
+    },
+    {
+      "id": "st_5",
+      "action": "click",
+      "selector": "#__primerPortalRoot__ > div > div > div > div > div > ul > li:nth-of-type(2) > button",
+      "label": "GitHub CLI"
+    },
+    {
+      "id": "st_6",
+      "action": "click",
+      "selector": "#__primerPortalRoot__ > div > div > div > div > div > ul > li:nth-of-type(1) > button",
+      "label": "HTTPS"
+    },
+    {
+      "id": "st_7",
+      "action": "click",
+      "selector": "#repository-container-header > div:nth-of-type(1) > div:nth-of-type(1) > div",
+      "label": "firecrawl / firecrawl Public"
+    },
+    {
+      "id": "st_8",
+      "action": "click",
+      "selector": "#repository-container-header > div:nth-of-type(1) > div:nth-of-type(1) > div",
+      "label": "firecrawl / firecrawl Public"
+    },
+    {
+      "id": "st_9",
+      "action": "click",
+      "selector": "div > span:nth-of-type(4)",
+      "label": "Public"
+    }
+  ]
+}

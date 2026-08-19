@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=1280" />
+  <title>Capture Studio — SOOBINZHONGSON</title>
+  <link rel="stylesheet" href="/ds/styles.css" />
+  <link rel="stylesheet" href="/studio.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="wordmark">SOOBINZHONGSON</div>
+      <div class="eyebrow">Capture studio</div>
+    </div>
+    <div class="brand-rule"></div>
+    <nav class="nav" id="nav">
+      <button class="nav-item is-active" data-view="list" id="nav-list"></button>
+      <button class="nav-item" data-view="record" id="nav-record"></button>
+      <button class="nav-item" data-view="runs" id="nav-runs"></button>
+    </nav>
+    <div class="sidebar-foot">
+      <span class="mono">Playwright · localhost:4700</span>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="page-rule"></div>
+    <div class="page" id="page">
+      <div id="alert-slot"></div>
+      <section id="view-list"></section>
+      <section id="view-record" hidden></section>
+      <section id="view-runs" hidden></section>
+    </div>
+  </main>
+
+  <!-- drawer + scrim -->
+  <div class="scrim" id="scrim" hidden></div>
+  <aside class="drawer" id="drawer" hidden></aside>
+
+  <!-- modal slot -->
+  <div class="modal-layer" id="modal-layer" hidden>
+    <div class="modal" id="modal"></div>
+  </div>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

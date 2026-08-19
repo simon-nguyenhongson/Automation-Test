@@ -1,0 +1,52 @@
+{
+  "id": "tc_7c0db650",
+  "type": "atomic",
+  "name": "2",
+  "description": "",
+  "createdAt": "2026-08-19T15:55:06.744Z",
+  "updatedAt": "2026-08-19T16:09:54.743Z",
+  "lastRun": {
+    "status": "passed",
+    "at": "2026-08-19T16:09:54.743Z",
+    "passed": 6,
+    "total": 6
+  },
+  "baseUrl": "https://github.com/firecrawl/firecrawl",
+  "steps": [
+    {
+      "id": "st_goto",
+      "action": "goto",
+      "url": "https://github.com/firecrawl/firecrawl"
+    },
+    {
+      "id": "st_2",
+      "selector": "div > span:nth-of-type(4)",
+      "label": "Public",
+      "action": "assert-text",
+      "text": "Public"
+    },
+    {
+      "id": "st_3",
+      "selector": "div > span:nth-of-type(4)",
+      "label": "Public",
+      "action": "assert-enabled"
+    },
+    {
+      "id": "st_4",
+      "action": "click",
+      "selector": "li:nth-of-type(3) > div > a",
+      "label": "Star 169k"
+    },
+    {
+      "id": "st_5",
+      "action": "goto",
+      "url": "https://github.com/firecrawl/firecrawl"
+    },
+    {
+      "id": "st_6",
+      "action": "click",
+      "selector": "#folder-row-3 > td:nth-of-type(2) > div > div > div > div > a",
+      "label": "firecrawl-cli-skills"
+    }
+  ]
+}

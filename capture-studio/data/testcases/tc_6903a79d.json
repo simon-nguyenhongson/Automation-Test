@@ -1,0 +1,35 @@
+{
+  "id": "tc_6903a79d",
+  "type": "atomic",
+  "name": "Mở trang chủ Playwright",
+  "description": "Kiểm tra trang chủ hiển thị",
+  "createdAt": "2026-08-19T15:25:14.499Z",
+  "updatedAt": "2026-08-19T16:09:51.643Z",
+  "lastRun": {
+    "status": "passed",
+    "at": "2026-08-19T16:09:51.643Z",
+    "passed": 3,
+    "total": 3
+  },
+  "baseUrl": "https://playwright.dev",
+  "steps": [
+    {
+      "id": "st_1",
+      "action": "goto",
+      "url": "https://playwright.dev/"
+    },
+    {
+      "id": "st_2",
+      "action": "assert-visible",
+      "selector": ".hero__title",
+      "label": "Tiêu đề hero"
+    },
+    {
+      "id": "st_3",
+      "action": "assert-text",
+      "selector": ".hero__title",
+      "text": "Playwright",
+      "label": "Tiêu đề hero"
+    }
+  ]
+}
